@@ -1,0 +1,34 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@milkdown/core": "^7.5.3",
+    "@milkdown/crepe": "^7.5.3",
+    "@milkdown/kit": "^7.5.3",
+    "@milkdown/plugin-collab": "^7.5.3",
+    "@milkdown/plugin-listener": "^7.5.3",
+    "@milkdown/react": "^7.5.3",
+    "lucide-react": "^0.395.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.23.1",
+    "y-websocket": "^2.0.4",
+    "yjs": "^13.6.15"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.11"
+  }
+}

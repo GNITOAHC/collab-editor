@@ -1,0 +1,208 @@
+@import "tailwindcss";
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  color: #e2e8f0;
+  background-color: #0f172a;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: #05070f;
+  background-image:
+    radial-gradient(circle at 80% 10%, rgba(99, 102, 241, 0.15) 0%, transparent 45%),
+    radial-gradient(circle at 10% 90%, rgba(168, 85, 247, 0.1) 0%, transparent 45%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Glowing background orb */
+.glow-orb {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: -10;
+}
+
+/* Glassmorphism utilities */
+.glass {
+  background: rgba(10, 14, 26, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+}
+
+.glass-hover {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-hover:hover {
+  background: rgba(15, 22, 40, 0.9);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(99, 102, 241, 0.12);
+  transform: translateY(-3px);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(13, 18, 33, 0.4);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Yjs Collaborative Cursor Styling */
+.ProseMirror-yjs-cursor {
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 2px solid;
+  border-right: none;
+  word-break: normal;
+  pointer-events: none;
+  display: inline;
+}
+
+.ProseMirror-yjs-cursor > div {
+  position: absolute;
+  top: -1.5em;
+  left: -2px;
+  font-size: 10px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  line-height: normal;
+  user-select: none;
+  color: #ffffff !important;
+  padding: 3px 7px;
+  border-radius: 4px;
+  border-bottom-left-radius: 0;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Milkdown / Crepe dark-mode overrides */
+.milkdown {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+  height: 100%;
+}
+
+/*
+ * Fix cursor-placement on click:
+ * Without min-height:100%, ProseMirror only covers the text content area.
+ * Clicking below the last line lands in dead space and places the cursor
+ * at the wrong position (or not at all). min-height fills the container.
+ */
+.milkdown .ProseMirror {
+  min-height: 100%;
+  cursor: text;
+  /* Prevent browser from jumping the scroll container when the caret moves */
+  overflow-anchor: none;
+}
+
+.milkdown-crepe {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.crepe-frame {
+  max-width: 860px !important;
+  margin: 0 auto !important;
+  background: transparent !important;
+  padding: 2rem 1.5rem !important;
+}
+
+.crepe-editor {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+.crepe-editor h1 {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  letter-spacing: -0.025em;
+}
+.crepe-editor h2 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.crepe-editor h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+.crepe-editor p,
+.crepe-editor li {
+  color: #cbd5e1;
+  line-height: 1.75;
+}
+.crepe-editor code {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.875em;
+  background: rgba(255, 255, 255, 0.07) !important;
+  padding: 2px 5px !important;
+  border-radius: 4px !important;
+  color: #c084fc !important;
+}
+.crepe-editor pre {
+  background: rgba(13, 18, 33, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px !important;
+}
+.crepe-editor blockquote {
+  border-left: 3px solid rgba(99, 102, 241, 0.5);
+  background: rgba(99, 102, 241, 0.04);
+  padding: 0.5rem 1rem;
+  border-radius: 0 6px 6px 0;
+  color: #94a3b8;
+}
+
+/* Hide the Milkdown Crepe built-in source/markdown toggle to avoid conflict with our header toggle */
+.crepe-menu [data-type="source-code"],
+.milkdown [aria-label*="Source"],
+.milkdown [aria-label*="source code"],
+[class*="source-editor-panel"],
+[class*="sourceCode"] > .toggle-btn {
+  display: none !important;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.pulse-soft {
+  animation: pulse-soft 2s infinite ease-in-out;
+}

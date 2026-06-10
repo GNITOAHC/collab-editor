@@ -1,0 +1,16 @@
+{
+  "name": "collab-editor-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/frontend",
+    "packages/backend"
+  ],
+  "scripts": {
+    "dev:frontend": "bun --cwd packages/frontend dev",
+    "dev:backend": "bun --cwd packages/backend dev",
+    "build:frontend": "bun --cwd packages/frontend build",
+    "start:backend": "bun --cwd packages/backend start",
+    "build:binary": "bun run build:frontend && bun scripts/compile-app.ts && bun build --compile --sourcemap=none packages/backend/src/index.ts --outfile collab-editor-app && bun scripts/reset-frontend-assets.ts",
+    "dev": "bun run dev:backend & bun run dev:frontend"
+  }
+}

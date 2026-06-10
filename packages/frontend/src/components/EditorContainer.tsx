@@ -1,0 +1,280 @@
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  ArrowLeft, Check, CloudLightning, Loader2, Eye, Code, Users,
+} from 'lucide-react';
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
+import { MilkdownProvider } from '@milkdown/react';
+import MilkdownEditor, { MilkdownEditorRef } from './MilkdownEditor';
+import MarkdownEditor from './MarkdownEditor';
+
+type EditorMode = 'wysiwyg' | 'markdown';
+
+export const EditorContainer: React.FC = () => {
+  const { projectName } = useParams<{ projectName: string }>();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isIframe = searchParams.get('iframe') === 'true';
+
+  const [yjsDoc, setYjsDoc] = useState<Y.Doc | null>(null);
+  const [wsProvider, setWsProvider] = useState<WebsocketProvider | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [activeUsers, setActiveUsers] = useState<{ name: string; color: string }[]>([]);
+  const [markdown, setMarkdown] = useState('');
+  const [editorMode, setEditorMode] = useState<EditorMode>('wysiwyg');
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'syncing'>('saved');
+
+  const milkdownRef = useRef<MilkdownEditorRef>(null);
+
+  // Refs used inside callbacks to avoid stale closures
+  const editorModeRef = useRef<EditorMode>('wysiwyg');
+  const hasLocalMarkdownEditsRef = useRef(false);
+
+  // Keep the ref in sync with state
+  useEffect(() => {
+    editorModeRef.current = editorMode;
+  }, [editorMode]);
+
+  // Initialize Y.Doc and WebsocketProvider
+  useEffect(() => {
+    if (!projectName) return;
+
+    const doc = new Y.Doc();
+    const wsHost = import.meta.env.DEV
+      ? 'ws://localhost:3001'
+      : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
+
+    const provider = new WebsocketProvider(wsHost, projectName, doc);
+    setYjsDoc(doc);
+    setWsProvider(provider);
+
+    provider.on('status', (event: any) => {
+      setConnectionStatus(event.status);
+    });
+
+    const NAMES = ['Luna', 'Nova', 'Astra', 'Orion', 'Leo', 'Cygnus', 'Vesper', 'Sol', 'Draco', 'Lyra'];
+    const COLORS = ['#6366f1', '#8b5cf6', '#d946ef', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#14b8a6', '#06b6d4', '#f43f5e'];
+    provider.awareness.setLocalStateField('user', {
+      name: NAMES[Math.floor(Math.random() * NAMES.length)],
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    });
+
+    const handleAwarenessChange = () => {
+      const users: { name: string; color: string }[] = [];
+      provider.awareness.getStates().forEach((state: any) => {
+        if (state.user) users.push(state.user);
+      });
+      setActiveUsers(users);
+    };
+    provider.awareness.on('change', handleAwarenessChange);
+
+    return () => {
+      provider.disconnect();
+      doc.destroy();
+    };
+  }, [projectName]);
+
+  // Debounced save of plain markdown text to SQLite for dashboard preview
+  useEffect(() => {
+    if (!projectName || !markdown) return;
+    setSaveStatus('saving');
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/project/${projectName}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ markdown }),
+        });
+        setSaveStatus(res.ok ? 'saved' : 'syncing');
+      } catch {
+        setSaveStatus('syncing');
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [markdown, projectName]);
+
+  /**
+   * Called by Milkdown whenever the document content changes (local or via Yjs sync).
+   * While in markdown mode with unsaved local edits, we block Milkdown updates from
+   * overwriting the user's textarea changes.
+   */
+  const handleMilkdownMarkdownChange = useCallback((md: string) => {
+    if (editorModeRef.current === 'markdown' && hasLocalMarkdownEditsRef.current) {
+      return;
+    }
+    setMarkdown(md);
+  }, []);
+
+  /** Called when the user types in the raw-markdown textarea. */
+  const handleTextareaChange = useCallback((val: string) => {
+    hasLocalMarkdownEditsRef.current = true;
+    setMarkdown(val);
+  }, []);
+
+  /**
+   * Toggle between WYSIWYG and raw-markdown modes.
+   *
+   * WYSIWYG → Markdown: snapshot the *current* ProseMirror state (not React state,
+   * which can lag a render behind fast Yjs updates from other collaborators).
+   *
+   * Markdown → WYSIWYG: if the user typed locally, push those changes into the
+   * Yjs document via replaceContent so all collaborators see them.
+   */
+  const handleEditorModeToggle = (mode: EditorMode) => {
+    if (mode === editorMode) return;
+
+    if (mode === 'markdown') {
+      // Always snapshot fresh content from ProseMirror to avoid stale React state
+      const fresh = milkdownRef.current?.getContent();
+      if (fresh !== undefined) setMarkdown(fresh);
+      hasLocalMarkdownEditsRef.current = false;
+    }
+
+    if (mode === 'wysiwyg' && hasLocalMarkdownEditsRef.current) {
+      milkdownRef.current?.replaceContent(markdown);
+      hasLocalMarkdownEditsRef.current = false;
+    }
+
+    setEditorMode(mode);
+  };
+
+  if (!yjsDoc || !wsProvider) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="flex flex-col items-center gap-4 text-slate-400">
+          <Loader2 size={36} className="animate-spin text-indigo-500" />
+          <span className="text-sm font-medium tracking-wide">Initializing collaborative session…</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`min-h-screen flex flex-col relative ${isIframe ? '' : 'bg-slate-950/5'}`}>
+      {!isIframe && (
+        <>
+          <div className="glow-orb" style={{ top: '-15%', left: '15%' }} />
+          <div className="glow-orb" style={{ bottom: '5%', right: '15%', background: 'radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%)' }} />
+        </>
+      )}
+
+      {!isIframe && (
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-slate-900/80 bg-slate-950/60 backdrop-blur-xl sticky top-0 z-20">
+          {/* Left: back + project info */}
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => navigate('/')}
+              className="shrink-0 p-2 bg-slate-900 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition cursor-pointer"
+            >
+              <ArrowLeft size={16} />
+            </button>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md">
+                  Project
+                </span>
+                <span className={`w-2 h-2 rounded-full ${
+                  connectionStatus === 'connected' ? 'bg-emerald-500 shadow-sm shadow-emerald-500/60'
+                    : connectionStatus === 'connecting' ? 'bg-amber-500 animate-pulse'
+                    : 'bg-red-500'
+                }`} />
+                <span className="text-[11px] text-slate-500 capitalize">{connectionStatus}</span>
+              </div>
+              <h1 className="text-lg font-bold text-white truncate">/project/{projectName}</h1>
+            </div>
+          </div>
+
+          {/* Right: users + save status + mode toggle */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Active collaborators */}
+            {activeUsers.length > 1 && (
+              <div className="flex items-center gap-2 bg-slate-900/60 border border-slate-800/50 rounded-xl py-1.5 px-3">
+                <Users size={13} className="text-slate-400" />
+                <span className="text-xs text-slate-400 font-medium">{activeUsers.length} online</span>
+                <div className="flex -space-x-1.5">
+                  {activeUsers.slice(0, 5).map((user, idx) => (
+                    <div
+                      key={idx}
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white border-2 border-slate-950 uppercase select-none cursor-help"
+                      style={{ backgroundColor: user.color }}
+                      title={user.name}
+                    >
+                      {user.name.slice(0, 2)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Save status */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-900/40 border border-slate-800/30 rounded-xl py-1.5 px-3">
+              {saveStatus === 'saved' && <><Check size={13} className="text-emerald-400" /><span>Saved</span></>}
+              {saveStatus === 'saving' && <><Loader2 size={13} className="animate-spin text-indigo-400" /><span>Saving…</span></>}
+              {saveStatus === 'syncing' && <><CloudLightning size={13} className="text-amber-400" /><span>Syncing…</span></>}
+            </div>
+
+            {/* Mode toggle */}
+            <div className="flex bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1 select-none">
+              <button
+                onClick={() => handleEditorModeToggle('wysiwyg')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                  editorMode === 'wysiwyg'
+                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <Eye size={13} />
+                WYSIWYG
+              </button>
+              <button
+                onClick={() => handleEditorModeToggle('markdown')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                  editorMode === 'markdown'
+                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <Code size={13} />
+                Markdown
+              </button>
+            </div>
+          </div>
+        </header>
+      )}
+
+      {/* Editor area — full remaining viewport height */}
+      <main className={`flex flex-col flex-1 ${isIframe ? 'h-screen' : 'h-[calc(100vh-73px)]'} ${isIframe ? '' : 'p-4 max-w-7xl w-full mx-auto'}`}>
+
+        {/* WYSIWYG — always mounted so Yjs collab stays connected; hidden via CSS when inactive.
+            overflow-y-auto here (not on the inner Milkdown div) so ProseMirror has exactly
+            one scroll ancestor for posAtCoords() to compute against. */}
+        <div className={`flex-1 glass rounded-2xl overflow-y-auto ${
+          editorMode === 'wysiwyg' ? 'block' : 'hidden'
+        }`}>
+          <MilkdownProvider>
+            <MilkdownEditor
+              ref={milkdownRef}
+              doc={yjsDoc}
+              provider={wsProvider}
+              onMarkdownChange={handleMilkdownMarkdownChange}
+            />
+          </MilkdownProvider>
+        </div>
+
+        {/* Raw Markdown — only rendered when in markdown mode */}
+        {editorMode === 'markdown' && (
+          <div className="flex-1 overflow-hidden rounded-2xl">
+            <MarkdownEditor
+              value={markdown}
+              onChange={handleTextareaChange}
+              projectName={projectName}
+            />
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default EditorContainer;

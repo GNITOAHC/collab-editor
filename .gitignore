@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+.bun/
+bun.lockb
+
+# Database files
+collab.sqlite
+collab.sqlite-journal
+collab.sqlite-shm
+collab.sqlite-wal
+
+# Build outputs
+dist/
+dist-ssr/
+*.local
+*.bun-build
+
+# OS files
+.DS_Store
+Thumbs.db
