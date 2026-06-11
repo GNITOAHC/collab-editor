@@ -97,7 +97,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange,
 
       {/* Bottom status bar */}
       <div className="shrink-0 flex items-center justify-between px-4 py-1.5 border-t border-slate-800/50 bg-slate-950/40 text-[11px] text-slate-600">
-        <span>Markdown Mode — changes sync on switch to WYSIWYG</span>
+        <span>Markdown Mode — changes sync live to collaborators</span>
         <span className="flex items-center gap-1 text-slate-500">
           <kbd className="bg-slate-800/60 border border-slate-700/50 rounded px-1 py-0.5 text-[10px]">Tab</kbd>
           <span>= 2 spaces</span>

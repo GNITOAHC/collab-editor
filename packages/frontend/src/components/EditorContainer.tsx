@@ -30,6 +30,7 @@ export const EditorContainer: React.FC = () => {
   // Refs used inside callbacks to avoid stale closures
   const editorModeRef = useRef<EditorMode>('wysiwyg');
   const hasLocalMarkdownEditsRef = useRef(false);
+  const markdownSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep the ref in sync with state
   useEffect(() => {
@@ -95,21 +96,52 @@ export const EditorContainer: React.FC = () => {
   }, [markdown, projectName]);
 
   /**
+   * When in markdown mode, listen directly to the Yjs document for remote updates.
+   * y-websocket applies remote updates with the WebsocketProvider as the Yjs transaction
+   * origin, so we can filter to remote-only changes cleanly. y-prosemirror registers its
+   * own observer first (at editor creation), so by the time ours fires, ProseMirror already
+   * has the merged content — getContent() is safe to call immediately.
+   *
+   * We skip updates while the user is actively typing (debounce pending) to avoid
+   * overwriting characters that haven't been pushed to Yjs yet.
+   */
+  useEffect(() => {
+    if (!yjsDoc || !wsProvider || editorMode !== 'markdown') return;
+
+    const handleRemoteUpdate = (_update: Uint8Array, origin: unknown) => {
+      if (origin !== wsProvider) return; // skip our own replaceContent calls
+      if (hasLocalMarkdownEditsRef.current) return; // skip while user is actively typing
+      const content = milkdownRef.current?.getContent();
+      if (content !== undefined) setMarkdown(content);
+    };
+
+    yjsDoc.on('update', handleRemoteUpdate);
+    return () => yjsDoc.off('update', handleRemoteUpdate);
+  }, [yjsDoc, wsProvider, editorMode]);
+
+  /**
    * Called by Milkdown whenever the document content changes (local or via Yjs sync).
-   * While in markdown mode with unsaved local edits, we block Milkdown updates from
-   * overwriting the user's textarea changes.
+   * In markdown mode the textarea is the source of truth, so we block all Milkdown-driven
+   * updates. Remote updates reach the textarea via the direct Yjs observer below instead.
    */
   const handleMilkdownMarkdownChange = useCallback((md: string) => {
-    if (editorModeRef.current === 'markdown' && hasLocalMarkdownEditsRef.current) {
-      return;
-    }
+    if (editorModeRef.current === 'markdown') return;
     setMarkdown(md);
   }, []);
 
-  /** Called when the user types in the raw-markdown textarea. */
+  /** Called when the user types in the raw-markdown textarea. Debounces a Yjs sync. */
   const handleTextareaChange = useCallback((val: string) => {
     hasLocalMarkdownEditsRef.current = true;
     setMarkdown(val);
+
+    if (markdownSyncTimeoutRef.current) clearTimeout(markdownSyncTimeoutRef.current);
+    markdownSyncTimeoutRef.current = setTimeout(() => {
+      // replaceContent triggers onMarkdownChange synchronously (ProseMirror transaction),
+      // so the echo is still blocked by the flag here, then we clear it so remote
+      // Yjs updates can flow through to the textarea afterwards.
+      milkdownRef.current?.replaceContent(val);
+      hasLocalMarkdownEditsRef.current = false;
+    }, 300);
   }, []);
 
   /**
@@ -124,11 +156,19 @@ export const EditorContainer: React.FC = () => {
   const handleEditorModeToggle = (mode: EditorMode) => {
     if (mode === editorMode) return;
 
+    // Cancel any pending debounced sync before switching modes
+    if (markdownSyncTimeoutRef.current) {
+      clearTimeout(markdownSyncTimeoutRef.current);
+      markdownSyncTimeoutRef.current = null;
+    }
+
     if (mode === 'markdown') {
       // Always snapshot fresh content from ProseMirror to avoid stale React state
       const fresh = milkdownRef.current?.getContent();
       if (fresh !== undefined) setMarkdown(fresh);
       hasLocalMarkdownEditsRef.current = false;
+      // Remove this user's cursor from other clients' WYSIWYG views
+      wsProvider?.awareness.setLocalStateField('cursor', null);
     }
 
     if (mode === 'wysiwyg' && hasLocalMarkdownEditsRef.current) {
