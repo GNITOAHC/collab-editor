@@ -37,13 +37,39 @@ collab-editor/
 
 ### Prerequisites
 
-You need [Bun](https://bun.sh) installed on your system.
+Bun is only required when running from source or building locally. The release binary does not require Bun or Node.js.
 
 ```bash
 curl -fsSL https://bun.sh/install | bash
 ```
 
-### Installation
+### Install a Release Binary
+
+Download and decompress the latest release for your platform:
+
+```bash
+OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+ARCH="$(uname -m)"
+
+case "$ARCH" in
+  x86_64|amd64) ARCH="x86_64" ;;
+  arm64|aarch64) ARCH="aarch64" ;;
+  *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
+esac
+
+curl -L "https://github.com/GNITOAHC/collab-editor/releases/latest/download/collab-editor-${OS}-${ARCH}.tar.gz" -o collab-editor.tar.gz
+tar -xzf collab-editor.tar.gz
+chmod +x "collab-editor-${OS}-${ARCH}"
+./collab-editor-${OS}-${ARCH}
+```
+
+The release binary serves the embedded frontend and stores project data in `collab.sqlite` in the current directory. Pass `--port <port>` to change the serving port:
+
+```bash
+./collab-editor-${OS}-${ARCH} --port 4000
+```
+
+### Install From Source
 
 Install all dependencies for both workspaces from the root of the repository:
 
