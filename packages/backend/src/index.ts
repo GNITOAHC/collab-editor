@@ -8,7 +8,68 @@ import { setupWSConnection, setPersistence } from './yjs-utils.js';
 import { Database } from 'bun:sqlite';
 import { assets } from './frontend-assets.js';
 
-const PORT = process.env.PORT || 3001;
+const DEFAULT_PORT = 3001;
+
+function printUsage() {
+  console.log(`Usage: collab-editor-app [options]
+
+Options:
+  -h, --help           Show this help message and exit.
+  --port <port>        Port to serve HTTP and WebSocket traffic on.
+  --port=<port>        Port to serve HTTP and WebSocket traffic on.
+
+Environment:
+  PORT                 Fallback port when --port is not provided.
+
+Defaults:
+  port                 ${DEFAULT_PORT}
+`);
+}
+
+function parsePort(value: string | undefined, source: string): number | undefined {
+  if (value === undefined) return undefined;
+
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    console.error(`Invalid ${source}: "${value}". Expected an integer from 1 to 65535.`);
+    process.exit(1);
+  }
+
+  return port;
+}
+
+function hasHelpArg(argv: string[]): boolean {
+  return argv.includes('-h') || argv.includes('--help');
+}
+
+function parsePortArg(argv: string[]): number | undefined {
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (arg === '--port') {
+      if (argv[index + 1] === undefined) {
+        console.error('Invalid --port: missing value. Expected an integer from 1 to 65535.');
+        process.exit(1);
+      }
+      return parsePort(argv[index + 1], '--port');
+    }
+
+    if (arg.startsWith('--port=')) {
+      return parsePort(arg.slice('--port='.length), '--port');
+    }
+  }
+
+  return undefined;
+}
+
+const argv = process.argv.slice(2);
+
+if (hasHelpArg(argv)) {
+  printUsage();
+  process.exit(0);
+}
+
+const PORT = parsePortArg(argv) ?? parsePort(process.env.PORT, 'PORT') ?? DEFAULT_PORT;
 
 const db = new Database('collab.sqlite');
 db.run(`
