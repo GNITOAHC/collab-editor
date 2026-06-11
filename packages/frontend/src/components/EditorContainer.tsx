@@ -286,7 +286,7 @@ export const EditorContainer: React.FC = () => {
 
       {/* Minimal status + optional mode-toggle bar shown in iframe mode */}
       {isIframe && (
-        <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-900/80 bg-slate-950/80 backdrop-blur-sm shrink-0">
+        <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-1.5 border-b border-slate-900/80 bg-slate-950/80 backdrop-blur-sm shrink-0">
           {/* Left: online users + save status */}
           <div className="flex items-center gap-2">
             {activeUsers.length > 1 && (
