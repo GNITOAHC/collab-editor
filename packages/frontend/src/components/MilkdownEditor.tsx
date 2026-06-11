@@ -8,7 +8,7 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 
 import '@milkdown/crepe/theme/common/style.css';
-import '@milkdown/crepe/theme/frame.css';
+import '@milkdown/crepe/theme/frame-dark.css';
 
 interface MilkdownEditorProps {
   doc: Y.Doc;

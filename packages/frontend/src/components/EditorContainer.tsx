@@ -288,10 +288,12 @@ export const EditorContainer: React.FC = () => {
 
         {/* WYSIWYG — always mounted so Yjs collab stays connected; hidden via CSS when inactive.
             overflow-y-auto here (not on the inner Milkdown div) so ProseMirror has exactly
-            one scroll ancestor for posAtCoords() to compute against. */}
+            one scroll ancestor for posAtCoords() to compute against.
+            backdrop-filter intentionally omitted: it would create a new containing block for
+            the position:fixed drop-cursor indicator, offsetting it from the viewport. */}
         <div className={`flex-1 glass rounded-2xl overflow-y-auto ${
           editorMode === 'wysiwyg' ? 'block' : 'hidden'
-        }`}>
+        }`} style={{ backdropFilter: 'none', WebkitBackdropFilter: 'none', background: 'rgba(10,14,26,0.94)' }}>
           <MilkdownProvider>
             <MilkdownEditor
               ref={milkdownRef}

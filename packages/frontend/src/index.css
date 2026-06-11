@@ -106,24 +106,44 @@ body {
   pointer-events: none;
 }
 
-/* Milkdown / Crepe dark-mode overrides */
-.milkdown {
-  background: transparent !important;
-  color: #e2e8f0 !important;
-  height: 100%;
-}
+/* ── Milkdown / Crepe theming ─────────────────────────────────────────────── */
 
 /*
- * Fix cursor-placement on click:
- * Without min-height:100%, ProseMirror only covers the text content area.
- * Clicking below the last line lands in dead space and places the cursor
- * at the wrong position (or not at all). min-height fills the container.
+ * Override the frame-dark CSS variables to match our indigo/slate colour scheme.
+ * These are evaluated after the theme import so they win without !important.
+ * Every Milkdown component (toolbar, slash menu, code blocks, selections…)
+ * derives its colours from these variables.
  */
-.milkdown .ProseMirror {
-  min-height: 100%;
-  cursor: text;
-  /* Prevent browser from jumping the scroll container when the caret moves */
-  overflow-anchor: none;
+.milkdown {
+  /* Colours */
+  --crepe-color-background:         transparent;
+  --crepe-color-on-background:      #e2e8f0;   /* slate-200  – body text      */
+  --crepe-color-surface:            #1e293b;   /* slate-800  – toolbar / menus */
+  --crepe-color-surface-low:        #0f172a;   /* slate-900  – deeper surface  */
+  --crepe-color-on-surface:         #cbd5e1;   /* slate-300                    */
+  --crepe-color-on-surface-variant: #64748b;   /* slate-500  – muted labels    */
+  --crepe-color-outline:            rgba(255, 255, 255, 0.1);
+  --crepe-color-primary:            #818cf8;   /* indigo-400 – links / accents */
+  --crepe-color-secondary:          #1e293b;   /* slate-800                    */
+  --crepe-color-on-secondary:       #e2e8f0;
+  --crepe-color-inverse:            #e2e8f0;
+  --crepe-color-on-inverse:         #0f172a;
+  --crepe-color-inline-code:        #c084fc;   /* purple-400                   */
+  --crepe-color-error:              #f87171;   /* red-400                      */
+  --crepe-color-hover:              rgba(255, 255, 255, 0.05);
+  --crepe-color-selected:           rgba(99, 102, 241, 0.18); /* indigo tint  */
+  --crepe-color-inline-area:        #1e293b;   /* slate-800  – inline code bg  */
+
+  /* Fonts */
+  --crepe-font-title:   'Inter', system-ui, sans-serif;
+  --crepe-font-default: 'Inter', system-ui, sans-serif;
+  --crepe-font-code:    'Fira Code', ui-monospace, monospace;
+
+  /* Shadows */
+  --crepe-shadow-1: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --crepe-shadow-2: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.06);
+
+  height: 100%;
 }
 
 .milkdown-crepe {
@@ -139,58 +159,53 @@ body {
   padding: 2rem 1.5rem !important;
 }
 
-.crepe-editor {
-  background: transparent !important;
-  color: #e2e8f0 !important;
+/*
+ * Fix cursor-placement on click:
+ * Without min-height:100%, ProseMirror only covers the text content area.
+ * Clicking below the last line lands in dead space. min-height fills it.
+ */
+.milkdown .ProseMirror {
+  min-height: 100%;
+  cursor: text;
+  overflow-anchor: none;
 }
 
-.crepe-editor h1 {
-  font-size: 2.1rem;
-  font-weight: 800;
-  color: #ffffff;
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
-  letter-spacing: -0.025em;
+/* Heading colours – ProseMirror headings inherit body colour by default */
+.milkdown .ProseMirror h1 { color: #ffffff;  font-weight: 700; letter-spacing: -0.02em; }
+.milkdown .ProseMirror h2 { color: #f8fafc;  font-weight: 700; }
+.milkdown .ProseMirror h3 { color: #f1f5f9;  font-weight: 600; }
+.milkdown .ProseMirror h4,
+.milkdown .ProseMirror h5,
+.milkdown .ProseMirror h6 { color: #e2e8f0;  font-weight: 600; }
+
+/* Paragraph / list body text */
+.milkdown .ProseMirror p,
+.milkdown .ProseMirror li { line-height: 1.75; }
+
+/* Blockquote: swap the generic selected-colour border for indigo */
+.milkdown .ProseMirror blockquote::before {
+  background: rgba(99, 102, 241, 0.5) !important;
 }
-.crepe-editor h2 {
-  font-size: 1.65rem;
-  font-weight: 700;
-  color: #f8fafc;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
+.milkdown .ProseMirror blockquote {
+  color: #94a3b8;
+  background: rgba(99, 102, 241, 0.04);
+  border-radius: 0 6px 6px 0;
 }
-.crepe-editor h3 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #f1f5f9;
-}
-.crepe-editor p,
-.crepe-editor li {
-  color: #cbd5e1;
-  line-height: 1.75;
-}
-.crepe-editor code {
-  font-family: 'Fira Code', monospace;
-  font-size: 0.875em;
-  background: rgba(255, 255, 255, 0.07) !important;
-  padding: 2px 5px !important;
-  border-radius: 4px !important;
-  color: #c084fc !important;
-}
-.crepe-editor pre {
-  background: rgba(13, 18, 33, 0.85) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+
+/* Code blocks: add a visible border so they stand out from the dark bg */
+.milkdown .milkdown-code-block {
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
   border-radius: 10px !important;
 }
-.crepe-editor blockquote {
-  border-left: 3px solid rgba(99, 102, 241, 0.5);
-  background: rgba(99, 102, 241, 0.04);
-  padding: 0.5rem 1rem;
-  border-radius: 0 6px 6px 0;
-  color: #94a3b8;
+
+/* Drop-cursor indicator: the default colour (derived from --crepe-color-outline)
+   becomes near-invisible with our dark scheme — override to indigo accent. */
+.milkdown .crepe-drop-cursor {
+  background-color: #818cf8 !important;
+  opacity: 0.9 !important;
 }
 
-/* Hide the Milkdown Crepe built-in source/markdown toggle to avoid conflict with our header toggle */
+/* Hide the Milkdown Crepe built-in source/markdown toggle */
 .crepe-menu [data-type="source-code"],
 .milkdown [aria-label*="Source"],
 .milkdown [aria-label*="source code"],
