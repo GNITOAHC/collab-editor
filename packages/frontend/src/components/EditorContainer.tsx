@@ -16,6 +16,7 @@ export const EditorContainer: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isIframe = searchParams.get('iframe') === 'true';
+  const allowMarkdownInIframe = searchParams.get('markdown') === 'true';
 
   const [yjsDoc, setYjsDoc] = useState<Y.Doc | null>(null);
   const [wsProvider, setWsProvider] = useState<WebsocketProvider | null>(null);
@@ -283,8 +284,68 @@ export const EditorContainer: React.FC = () => {
         </header>
       )}
 
+      {/* Minimal status + optional mode-toggle bar shown in iframe mode */}
+      {isIframe && (
+        <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-900/80 bg-slate-950/80 backdrop-blur-sm shrink-0">
+          {/* Left: online users + save status */}
+          <div className="flex items-center gap-2">
+            {activeUsers.length > 1 && (
+              <div className="flex items-center gap-1.5">
+                <Users size={11} className="text-slate-500" />
+                <span className="text-[11px] text-slate-400 font-medium">{activeUsers.length}</span>
+                <div className="flex -space-x-1">
+                  {activeUsers.slice(0, 4).map((user, idx) => (
+                    <div
+                      key={idx}
+                      className="w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-bold text-white border border-slate-950 uppercase select-none"
+                      style={{ backgroundColor: user.color }}
+                      title={user.name}
+                    >
+                      {user.name.slice(0, 1)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex items-center gap-1 text-[11px] text-slate-500">
+              {saveStatus === 'saved'   && <><Check size={11} className="text-emerald-500" /><span>Saved</span></>}
+              {saveStatus === 'saving'  && <><Loader2 size={11} className="animate-spin text-indigo-400" /><span>Saving…</span></>}
+              {saveStatus === 'syncing' && <><CloudLightning size={11} className="text-amber-400" /><span>Syncing…</span></>}
+            </div>
+          </div>
+
+          {/* Right: mode toggle (only when ?markdown=true) */}
+          {allowMarkdownInIframe && (
+            <div className="flex bg-slate-900 border border-slate-800 rounded-xl p-0.5 gap-0.5 select-none">
+              <button
+                onClick={() => handleEditorModeToggle('wysiwyg')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                  editorMode === 'wysiwyg'
+                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <Eye size={11} />
+                WYSIWYG
+              </button>
+              <button
+                onClick={() => handleEditorModeToggle('markdown')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                  editorMode === 'markdown'
+                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <Code size={11} />
+                Markdown
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Editor area — full remaining viewport height */}
-      <main className={`flex flex-col flex-1 ${isIframe ? 'h-screen' : 'h-[calc(100vh-73px)]'} ${isIframe ? '' : 'p-4 max-w-7xl w-full mx-auto'}`}>
+      <main className={`flex flex-col flex-1 ${isIframe ? 'h-[calc(100vh-38px)]' : 'h-[calc(100vh-73px)]'} ${isIframe ? '' : 'p-4 max-w-7xl w-full mx-auto'}`}>
 
         {/* WYSIWYG — always mounted so Yjs collab stays connected; hidden via CSS when inactive.
             overflow-y-auto here (not on the inner Milkdown div) so ProseMirror has exactly

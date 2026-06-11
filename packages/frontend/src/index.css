@@ -168,6 +168,7 @@ body {
   min-height: 100%;
   cursor: text;
   overflow-anchor: none;
+  caret-color: #ffffff;
 }
 
 /* Heading colours – ProseMirror headings inherit body colour by default */
@@ -181,6 +182,19 @@ body {
 /* Paragraph / list body text */
 .milkdown .ProseMirror p,
 .milkdown .ProseMirror li { line-height: 1.75; }
+
+/*
+ * Milkdown Crepe renders list bullets/numbers via a custom .label-wrapper div
+ * (not native ::marker), and colours it with --crepe-color-outline which we
+ * have set to rgba(255,255,255,0.1) for border use — making markers invisible.
+ * Override the label-wrapper directly.
+ */
+.milkdown .milkdown-list-item-block li .label-wrapper {
+  color: #e2e8f0 !important;   /* indigo-400 */
+}
+.milkdown .milkdown-list-item-block li .label-wrapper svg {
+  fill: #e2e8f0 !important;
+}
 
 /* Blockquote: swap the generic selected-colour border for indigo */
 .milkdown .ProseMirror blockquote::before {
