@@ -45,28 +45,16 @@ curl -fsSL https://bun.sh/install | bash
 
 ### Install a Release Binary
 
-Download and decompress the latest release for your platform:
+Supported platforms: Linux (x86_64, aarch64) and macOS (Apple Silicon).
 
 ```bash
-OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
-ARCH="$(uname -m)"
-
-case "$ARCH" in
-  x86_64|amd64) ARCH="x86_64" ;;
-  arm64|aarch64) ARCH="aarch64" ;;
-  *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
-esac
-
-curl -L "https://github.com/GNITOAHC/collab-editor/releases/latest/download/collab-editor-${OS}-${ARCH}.tar.gz" -o collab-editor.tar.gz
-tar -xzf collab-editor.tar.gz
-chmod +x "collab-editor-${OS}-${ARCH}"
-./collab-editor-${OS}-${ARCH}
+curl -LsSf https://raw.githubusercontent.com/GNITOAHC/collab-editor/main/install.sh | bash
 ```
 
 The release binary serves the embedded frontend and stores project data in `collab.sqlite` in the current directory. Pass `--port <port>` to change the serving port:
 
 ```bash
-./collab-editor-${OS}-${ARCH} --port 4000
+collab-editor --port 4000
 ```
 
 ### Install From Source
@@ -98,11 +86,13 @@ bun run dev
 If you prefer to run the workspaces in separate terminals:
 
 **Start the Backend server:**
+
 ```bash
 bun run dev:backend
 ```
 
 **Start the Frontend dev server:**
+
 ```bash
 bun run dev:frontend
 ```
