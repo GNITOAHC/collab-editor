@@ -118,21 +118,21 @@ body {
   /* Colours */
   --crepe-color-background:         transparent;
   --crepe-color-on-background:      #e2e8f0;   /* slate-200  – body text      */
-  --crepe-color-surface:            #1e293b;   /* slate-800  – toolbar / menus */
-  --crepe-color-surface-low:        #0f172a;   /* slate-900  – deeper surface  */
-  --crepe-color-on-surface:         #cbd5e1;   /* slate-300                    */
-  --crepe-color-on-surface-variant: #64748b;   /* slate-500  – muted labels    */
-  --crepe-color-outline:            rgba(255, 255, 255, 0.1);
+  --crepe-color-surface:            #475569;   /* slate-600  – toolbar / menus */
+  --crepe-color-surface-low:        #334155;   /* slate-700  – deeper surface  */
+  --crepe-color-on-surface:         #ffffff;   /* white                        */
+  --crepe-color-on-surface-variant: #e2e8f0;   /* slate-200  – toolbar icons   */
+  --crepe-color-outline:            rgba(255, 255, 255, 0.18);
   --crepe-color-primary:            #818cf8;   /* indigo-400 – links / accents */
-  --crepe-color-secondary:          #1e293b;   /* slate-800                    */
-  --crepe-color-on-secondary:       #e2e8f0;
+  --crepe-color-secondary:          #475569;   /* slate-600                    */
+  --crepe-color-on-secondary:       #f8fafc;
   --crepe-color-inverse:            #e2e8f0;
   --crepe-color-on-inverse:         #0f172a;
   --crepe-color-inline-code:        #c084fc;   /* purple-400                   */
   --crepe-color-error:              #f87171;   /* red-400                      */
-  --crepe-color-hover:              rgba(255, 255, 255, 0.05);
-  --crepe-color-selected:           rgba(99, 102, 241, 0.18); /* indigo tint  */
-  --crepe-color-inline-area:        #1e293b;   /* slate-800  – inline code bg  */
+  --crepe-color-hover:              rgba(255, 255, 255, 0.08);
+  --crepe-color-selected:           rgba(99, 102, 241, 0.22); /* indigo tint  */
+  --crepe-color-inline-area:        #334155;   /* slate-700  – inline code bg  */
 
   /* Fonts */
   --crepe-font-title:   'Inter', system-ui, sans-serif;
@@ -140,8 +140,8 @@ body {
   --crepe-font-code:    'Fira Code', ui-monospace, monospace;
 
   /* Shadows */
-  --crepe-shadow-1: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
-  --crepe-shadow-2: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --crepe-shadow-1: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  --crepe-shadow-2: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.12);
 
   height: 100%;
 }
@@ -184,6 +184,21 @@ body {
 .milkdown .ProseMirror li { line-height: 1.75; }
 
 /*
+ * Italic: :root sets `font-synthesis: none`, and Inter's webfont often ships
+ * without an italic face — so <em> ends up upright. Re-enable synthesis for
+ * italics (and bold, for symmetry) inside the editor.
+ */
+.milkdown .ProseMirror em,
+.milkdown .ProseMirror i {
+  font-style: italic;
+  font-synthesis: style weight;
+}
+.milkdown .ProseMirror strong,
+.milkdown .ProseMirror b {
+  font-synthesis: style weight;
+}
+
+/*
  * Milkdown Crepe renders list bullets/numbers via a custom .label-wrapper div
  * (not native ::marker), and colours it with --crepe-color-outline which we
  * have set to rgba(255,255,255,0.1) for border use — making markers invisible.
@@ -217,6 +232,56 @@ body {
 .milkdown .crepe-drop-cursor {
   background-color: #818cf8 !important;
   opacity: 0.9 !important;
+}
+
+/*
+ * Toolbar / menu items
+ * ─────────────────────
+ * Crepe renders icons inside `.toolbar-item`. We use broad selectors + !important
+ * because SVGs often carry inline fill/stroke attributes that win over plain CSS.
+ *
+ * Inactive   →  bright slate-100 icon, no background  (clearly visible)
+ * Hover      →  white icon on subtle white wash       (interactive feedback)
+ * Triggered  →  white icon on indigo pill             (color-coded "on" state)
+ */
+.milkdown .toolbar-item,
+.milkdown-toolbar > * {
+  color: #f1f5f9 !important;
+  border-radius: 6px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.milkdown .toolbar-item svg,
+.milkdown-toolbar svg {
+  color: #f1f5f9 !important;
+  fill: currentColor !important;
+}
+
+/* Hover — interactive but not "on" */
+.milkdown .operation-item:hover,
+.milkdown .toolbar-item:hover,
+.milkdown-toolbar > *:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+.milkdown .operation-item:hover svg,
+.milkdown .toolbar-item:hover svg,
+.milkdown-toolbar > *:hover svg {
+  color: #ffffff !important;
+}
+
+/* Triggered / active — distinct indigo pill so it's unmistakable */
+.milkdown .toolbar-item.active,
+.milkdown .toolbar-item[data-active="true"],
+.milkdown-toolbar > *.active,
+.milkdown-toolbar > *[aria-pressed="true"] {
+  background-color: rgba(129, 140, 248, 0.35) !important; /* indigo-400 @ 35% */
+  color: #ffffff !important;
+  box-shadow: inset 0 0 0 1px rgba(165, 180, 252, 0.5);
+}
+.milkdown .toolbar-item.active svg,
+.milkdown-toolbar > *.active svg,
+.milkdown-toolbar > *[aria-pressed="true"] svg {
+  color: #ffffff !important;
 }
 
 /* Hide the Milkdown Crepe built-in source/markdown toggle */
