@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Calendar, Github } from 'lucide-react';
+import { Plus, Search, Calendar, Github, KanbanSquare } from 'lucide-react';
 
 interface Project {
   name: string;
@@ -83,6 +83,23 @@ export const Dashboard: React.FC = () => {
           Create
         </button>
       </form>
+
+      <button
+        type="button"
+        onClick={() => navigate('/board')}
+        className="mb-8 flex w-full items-center justify-between rounded-lg border border-slate-800 bg-slate-950/50 px-4 py-3 text-left transition hover:border-indigo-500/60 hover:bg-slate-900/70 cursor-pointer"
+      >
+        <span className="flex min-w-0 items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-indigo-400/30 bg-indigo-500/10 text-indigo-300">
+            <KanbanSquare size={18} />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-slate-100">Signal Board</span>
+            <span className="block truncate text-xs text-slate-500">Weekly sync tasks, owners, notes, and archive</span>
+          </span>
+        </span>
+        <span className="shrink-0 text-xs font-medium text-indigo-300">Open</span>
+      </button>
 
       {/* Search */}
       <div className="relative mb-4">

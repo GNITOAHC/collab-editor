@@ -7,6 +7,7 @@ import * as Y from 'yjs';
 import { setupWSConnection, setPersistence } from './yjs-utils.js';
 import { Database } from 'bun:sqlite';
 import { assets } from './frontend-assets.js';
+import { SIGNAL_BOARD_STATE_KEY, createDefaultSignalBoardState } from './signal-board-default.js';
 
 const DEFAULT_PORT = 3001;
 
@@ -77,6 +78,13 @@ db.run(`
     name TEXT PRIMARY KEY,
     ydoc BLOB,
     markdown TEXT DEFAULT '',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+db.run(`
+  CREATE TABLE IF NOT EXISTS app_state (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )
 `);
@@ -187,6 +195,61 @@ app.get('/api/projects', (_req, res) => {
     res.json(rows);
   } catch (error) {
     console.error('Error fetching projects:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/state/:key', (req, res) => {
+  const { key } = req.params;
+  try {
+    let row = db.prepare('SELECT key, value, updated_at FROM app_state WHERE key = ?').get(key) as
+      | { key: string; value: string; updated_at: string }
+      | undefined;
+
+    if (!row) {
+      if (key !== SIGNAL_BOARD_STATE_KEY) {
+        res.status(404).json({ error: 'State not found' });
+        return;
+      }
+
+      const value = JSON.stringify(createDefaultSignalBoardState());
+      db.prepare(`
+        INSERT INTO app_state (key, value, updated_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+      `).run(key, value);
+      row = db.prepare('SELECT key, value, updated_at FROM app_state WHERE key = ?').get(key) as {
+        key: string;
+        value: string;
+        updated_at: string;
+      };
+    }
+
+    res.json(row);
+  } catch (error) {
+    console.error(`Error fetching state "${key}":`, error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/state/:key', (req, res) => {
+  const { key } = req.params;
+  const { value } = req.body;
+
+  if (typeof value !== 'string') {
+    return res.status(400).json({ error: 'Missing string value field' });
+  }
+
+  try {
+    db.prepare(`
+      INSERT INTO app_state (key, value, updated_at)
+      VALUES (?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(key) DO UPDATE SET
+        value = excluded.value,
+        updated_at = CURRENT_TIMESTAMP
+    `).run(key, value);
+    res.json({ success: true });
+  } catch (error) {
+    console.error(`Error updating state "${key}":`, error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
